@@ -286,9 +286,6 @@ export interface OutputChunkSet {
 	getTimings?: () => SerializedTimings;
 }
 
-const TIME_BUILD = '# BUILD';
-const TIME_GENERATE = '# GENERATE';
-
 export default function rollup(
 	rawInputOptions: InputOptions
 ): Promise<OutputChunk | OutputChunkSet>;
@@ -300,14 +297,14 @@ export default function rollup(
 		initialiseTimers(inputOptions);
 		const graph = new Graph(inputOptions);
 
-		timeStart(TIME_BUILD);
+		timeStart('BUILD', 1);
 
 		const codeSplitting =
 			inputOptions.experimentalCodeSplitting && inputOptions.input instanceof Array;
 
 		if (!codeSplitting)
 			return graph.buildSingle(inputOptions.input).then(chunk => {
-				timeEnd(TIME_BUILD);
+				timeEnd('BUILD', 1);
 
 				function normalizeOptions(rawOutputOptions: GenericConfigObject) {
 					if (!rawOutputOptions) {
@@ -352,12 +349,12 @@ export default function rollup(
 				function generate(rawOutputOptions: GenericConfigObject) {
 					const outputOptions = normalizeOptions(rawOutputOptions);
 
-					timeStart(TIME_GENERATE);
+					timeStart('GENERATE', 1);
 
 					const promise = Promise.resolve()
 						.then(() => chunk.render(outputOptions))
 						.then(rendered => {
-							timeEnd(TIME_GENERATE);
+							timeEnd('GENERATE', 1);
 
 							graph.plugins.forEach(plugin => {
 								if (plugin.ongenerate) {
@@ -447,7 +444,7 @@ export default function rollup(
 			});
 
 		return graph.buildChunks(inputOptions.input).then(bundle => {
-			timeEnd(TIME_BUILD);
+			timeEnd('BUILD', 1);
 			const chunks: {
 				[name: string]: {
 					name: string;
@@ -484,7 +481,7 @@ export default function rollup(
 					});
 				}
 
-				timeStart(TIME_GENERATE);
+				timeStart('GENERATE', 1);
 
 				const generated: { [chunkName: string]: SourceDescription } = {};
 
@@ -492,7 +489,7 @@ export default function rollup(
 					Object.keys(bundle).map(chunkName => {
 						const chunk = bundle[chunkName];
 						return chunk.render(outputOptions).then(rendered => {
-							timeEnd(TIME_GENERATE);
+							timeEnd('GENERATE', 1);
 
 							graph.plugins.forEach(plugin => {
 								if (plugin.ongenerate) {
